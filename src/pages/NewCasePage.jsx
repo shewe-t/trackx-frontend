@@ -515,7 +515,7 @@ Please ensure your PDF contains GPS coordinates in one of these formats:
         }))
       };
 
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/cases/create", casePayload, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/cases/create`, casePayload, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -548,7 +548,7 @@ Please ensure your PDF contains GPS coordinates in one of these formats:
     } catch (error) {
       console.error("Failed to create case:", error);
       if (error.response) {
-        alert(`Failed to create case: ${JSON.stringify(error.response.data.detail)}`);
+        alert("Failed to create case: " + JSON.stringify(error.response.data.detail));
       } else if (error.request) {
         alert("Failed to create case: No response from server. Check your network connection.");
       } else {
