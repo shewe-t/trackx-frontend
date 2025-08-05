@@ -33,7 +33,7 @@ function ManageCasesPage() {
 
   const handleSearch = async () => {
     try {
-      const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/search", {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/cases/search`, {
         params: {
           case_name: searchTerm || undefined,
           region: region || undefined,

@@ -26,7 +26,7 @@ function AdminPanel() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("${import.meta.env.VITE_API_URL}/admin/users", {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/admin/users`, {
         params: {
           role: roleFilter !== "all" ? roleFilter : undefined,
           search: search || undefined,

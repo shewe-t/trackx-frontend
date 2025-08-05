@@ -43,7 +43,7 @@ function MyCasesPage() {
     try {
       const uid = auth.currentUser?.uid; // Ensure userID is fetched
       if (!uid) return;
-      const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/search", {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/cases/search`, {
         params: {
           user_id: uid, // Always include userID
           searchTerm,
@@ -131,7 +131,7 @@ function MyCasesPage() {
   // Update status
   const handleStatusChange = async (caseItem, newStatus) => {
     try {
-      await axios.put("${import.meta.env.VITE_API_URL}/cases/update", {
+      await axios.put(`${import.meta.env.VITE_API_URL}`, {
         ...caseItem,
         status: newStatus,
       });
@@ -146,7 +146,7 @@ function MyCasesPage() {
   // Update urgency
   const handleTagChange = async (caseItem, newUrgency) => {
     try {
-      await axios.put("${import.meta.env.VITE_API_URL}/cases/update", {
+      await axios.put(`${import.meta.env.VITE_API_URL}`, {
         ...caseItem,
         urgency: newUrgency, 
       });

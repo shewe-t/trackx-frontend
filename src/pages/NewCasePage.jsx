@@ -515,7 +515,7 @@ Please ensure your PDF contains GPS coordinates in one of these formats:
         }))
       };
 
-      const response = await axios.post("${import.meta.env.VITE_API_URL}/cases/create", casePayload, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/cases/create", casePayload, {
         headers: {
           'Content-Type': 'application/json'
         }
