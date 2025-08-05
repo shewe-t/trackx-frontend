@@ -411,3 +411,4 @@ function HomePage() {
         </main>
       </div>
     );}
+    export default HomePage;
