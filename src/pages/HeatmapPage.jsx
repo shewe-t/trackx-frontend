@@ -26,7 +26,7 @@ function HeatmapPage() {
   useEffect(() => {
   const fetchAndProcessPoints = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/cases/all-points-with-case-ids');
+      const res = await axios.get('${import.meta.env.VITE_API_URL}/cases/all-points-with-case-ids');
       const rawPoints = res.data.points;
 
       // 1. Group by caseId
@@ -71,7 +71,7 @@ function HeatmapPage() {
 
       
       try {
-        const caseRes = await axios.get("http://localhost:8000/cases/all");
+        const caseRes = await axios.get("${import.meta.env.VITE_API_URL}/cases/all");
         console.log("✅ Raw case documents:", caseRes.data); // Add this
 
         const caseDocs = caseRes.data; // ✅ This is already the array!
@@ -107,7 +107,7 @@ function HeatmapPage() {
 useEffect(() => {
   const fetchCaseDocuments = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/cases/all"); // or your deployed API URL
+      const res = await axios.get("${import.meta.env.VITE_API_URL}/cases/all"); // or your deployed API URL
       const cases = res.data;
 
       const map = {};

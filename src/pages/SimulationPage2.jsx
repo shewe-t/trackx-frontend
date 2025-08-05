@@ -88,7 +88,7 @@ const handleSignOut = async () => {
           setError("No case number found.");
           return;
         }
-        const res = await axios.get(`http://localhost:8000/cases/czml/${caseNumber}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/czml/${caseNumber}`);
         setCzml(res.data);
       } catch (err) {
         console.error("Error fetching CZML:", err);

@@ -42,7 +42,7 @@ function EditCasePage() {
   useEffect(() => {
     const fetchCase = async (id) => {
       try {
-        const res = await axios.get("http://localhost:8000/cases/search", { params: {} });
+        const res = await axios.get("${import.meta.env.VITE_API_URL}/cases/search", { params: {} });
         const allCases = res.data.cases;
         const found = allCases.find((c) => c.doc_id === id);
         if (found) setCaseData(found);
@@ -76,7 +76,7 @@ function EditCasePage() {
     e.preventDefault();
 
     try {
-      const response = await axios.put("http://localhost:8000/cases/update", {
+      const response = await axios.put("${import.meta.env.VITE_API_URL}/cases/update", {
         doc_id: caseData?.doc_id || docIdFromLocation,
         caseNumber,
         caseTitle,

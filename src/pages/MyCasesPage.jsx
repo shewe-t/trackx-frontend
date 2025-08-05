@@ -43,7 +43,7 @@ function MyCasesPage() {
     try {
       const uid = auth.currentUser?.uid; // Ensure userID is fetched
       if (!uid) return;
-      const response = await axios.get("http://localhost:8000/cases/search", {
+      const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/search", {
         params: {
           user_id: uid, // Always include userID
           searchTerm,
@@ -77,7 +77,7 @@ function MyCasesPage() {
         let allPoints = [];
         for (let c of myCases) {
           const res = await axios.get(
-            `http://localhost:8000/cases/${c.doc_id}/all-points`
+            `${import.meta.env.VITE_API_URL}/cases/${c.doc_id}/all-points`
           );
           allPoints = [...allPoints, ...(res.data.points || [])];
         }
@@ -98,7 +98,7 @@ function MyCasesPage() {
     const fetchPoints = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8000/cases/${hoveredCase.doc_id}/all-points`
+          `${import.meta.env.VITE_API_URL}/cases/${hoveredCase.doc_id}/all-points`
         );
         const pts = res.data.points || [];
         if (pts.length > 0) {
@@ -131,7 +131,7 @@ function MyCasesPage() {
   // Update status
   const handleStatusChange = async (caseItem, newStatus) => {
     try {
-      await axios.put("http://localhost:8000/cases/update", {
+      await axios.put("${import.meta.env.VITE_API_URL}/cases/update", {
         ...caseItem,
         status: newStatus,
       });
@@ -146,7 +146,7 @@ function MyCasesPage() {
   // Update urgency
   const handleTagChange = async (caseItem, newUrgency) => {
     try {
-      await axios.put("http://localhost:8000/cases/update", {
+      await axios.put("${import.meta.env.VITE_API_URL}/cases/update", {
         ...caseItem,
         urgency: newUrgency, 
       });
@@ -164,7 +164,7 @@ function MyCasesPage() {
     if (!selectedCase) return;
     if (!window.confirm("Are you sure you want to delete this case?")) return;
     try {
-      await axios.delete(`http://localhost:8000/cases/delete/${selectedCase.doc_id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/cases/delete/${selectedCase.doc_id}`);
       alert("Case deleted successfully.");
       // Remove it from the local state:
       setMyCases((prev) => prev.filter((c) => c.doc_id !== selectedCase.doc_id));
@@ -183,7 +183,7 @@ function MyCasesPage() {
         console.warn("No user ID found. Cannot fetch notifications.");
         return;
       }
-      const response = await axios.get(`http://localhost:8000/notifications/${uid}`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/notifications/${uid}`, {
         params: { page, limit: notificationsPerPage },
       });
       setNotifications(response.data.notifications || []);
@@ -225,7 +225,7 @@ function MyCasesPage() {
         console.log(`Toggling read status for notification ${notification.id} to ${updatedReadStatus}`); // Debugging
     
         await axios.patch(
-          `http://localhost:8000/notifications/${uid}/${notification.id}`,
+          `${import.meta.env.VITE_API_URL}/notifications/${uid}/${notification.id}`,
           { read: updatedReadStatus }, // Send the `read` field in the request body
           { headers: { "Content-Type": "application/json" } } // Ensure the correct content type
         );

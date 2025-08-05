@@ -71,7 +71,7 @@ function HomePage() {
     useEffect(() => {
       const fetchRecentCases = async () => {
         try {
-          const response = await axios.get("http://localhost:8000/cases/recent", {
+          const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/recent", {
             params: {
               sortBy,
               ...(profile?.role !== "admin" && profile?.userID ? { user_id: profile.userID } : {})
@@ -94,7 +94,7 @@ function HomePage() {
     useEffect(() => {
       const fetchAllCases = async () => {
         try {
-          const response = await axios.get("http://localhost:8000/cases/search", {
+          const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/search", {
             params: profile?.role === "admin" ? {} : { user_id: profile?.userID }
           });
 
@@ -129,7 +129,7 @@ function HomePage() {
           const params = profile?.role === "admin" ? {} : { user_id: profile?.userID };
           console.log("📡 Fetching monthly case counts with params:", params);
 
-          const response = await axios.get("http://localhost:8000/cases/monthly-counts", {
+          const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/monthly-counts", {
             params,
           });
 
@@ -149,7 +149,7 @@ function HomePage() {
     useEffect(() => {
       const fetchRegionCounts = async () => {
         try {
-          const response = await axios.get("http://localhost:8000/cases/region-counts", {
+          const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/region-counts", {
             params: profile?.role === "admin" ? {} : { user_id: profile?.userID }
           });
 
@@ -169,7 +169,7 @@ function HomePage() {
     useEffect(() => {
       const fetchHeatPoints = async () => {
         try {
-          const response = await axios.get("http://localhost:8000/cases/all-points");
+          const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/all-points");
           const points = response.data.points || [];
     
           console.log("🔥 Raw heatmap points from backend:", points);
@@ -186,7 +186,7 @@ function HomePage() {
     useEffect(() => {
       const fetchGlobePoints = async () => {
         try {
-          const response = await axios.get("http://localhost:8000/cases/last-points");
+          const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/last-points");
           const data = response.data.points || [];
     
           console.log("🟢 Retrieved globePoints:", data); // ✅ ACTUAL LOG FOR DEBUGGING

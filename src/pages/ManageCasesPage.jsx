@@ -33,7 +33,7 @@ function ManageCasesPage() {
 
   const handleSearch = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/cases/search", {
+      const response = await axios.get("${import.meta.env.VITE_API_URL}/cases/search", {
         params: {
           case_name: searchTerm || undefined,
           region: region || undefined,
@@ -58,7 +58,7 @@ function ManageCasesPage() {
   const handleDelete = async (doc_id) => {
     if (!window.confirm("Are you sure you want to delete this case?")) return;
     try {
-      await axios.delete(`http://localhost:8000/cases/delete/${doc_id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/cases/delete/${doc_id}`);
       alert("Case deleted successfully.");
       handleSearch(); 
     } catch (err) {

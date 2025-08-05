@@ -26,7 +26,7 @@ function AdminPanel() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8000/admin/users", {
+      const response = await axios.get("${import.meta.env.VITE_API_URL}/admin/users", {
         params: {
           role: roleFilter !== "all" ? roleFilter : undefined,
           search: search || undefined,
@@ -51,7 +51,7 @@ const toggleRole = async (userId, currentRole) => {
   if (!confirmed) return;
 
   try {
-    await axios.post(`http://localhost:8000/admin/update-role/${userId}`, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/admin/update-role/${userId}`, {
       new_role: newRole,
     });
 
@@ -72,7 +72,7 @@ const handleDeleteUser = async (userId) => {
   if (!confirmed) return;
 
   try {
-    await axios.delete(`http://localhost:8000/admin/delete-user/${userId}`);
+    await axios.delete(`${import.meta.env.VITE_API_URL}/admin/delete-user/${userId}`);
     setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
   } catch (error) {
     console.error("Failed to delete user:", error);
