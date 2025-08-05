@@ -71,7 +71,7 @@ function HeatmapPage() {
 
       
       try {
-        const caseRes = await axios.get(`${import.meta.env.VITE_API_URL}/cases/all");
+        const caseRes = await axios.get(`${import.meta.env.VITE_API_URL}/cases/all`);
         console.log("✅ Raw case documents:", caseRes.data); // Add this
 
         const caseDocs = caseRes.data; // ✅ This is already the array!
@@ -107,7 +107,7 @@ function HeatmapPage() {
 useEffect(() => {
   const fetchCaseDocuments = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/all"); // or your deployed API URL
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/all`); // or your deployed API URL
       const cases = res.data;
 
       const map = {};
