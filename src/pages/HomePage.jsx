@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   PieChart,
@@ -17,8 +17,6 @@ import {
 } from "recharts";
 import adfLogo from "../assets/image-removebg-preview.png"; 
 import trackxLogo from "../assets/trackx-logo-removebg-preview.png";
-import BarChartComponent from "../components/BarChartComponent";
-// import HeatMapComponent from "../components/HeatMapComponent";
 import GlobeBackground from "../components/GlobeBackground"; 
 import { auth } from "../firebase"; 
 import { useAuth } from "../context/AuthContext";
@@ -40,21 +38,28 @@ function HomePage() {
     const [globePoints, setGlobePoints] = useState([]);
     const [sortBy, setSortBy] = useState("dateEntered");
     const [isLoading, setIsLoading] = useState(true);
+    const [dataFetched, setDataFetched] = useState(false);
 
-    const BLUE = "#1E40AF"; 
-    const RED = "#B91C1C";  
-    const GREEN = "#059669";
-    const COLORS = [RED, BLUE, GREEN];
+    // 🚀 PERFORMANCE FIX: Memoize constants to prevent re-renders
+    const COLORS = useMemo(() => ["#B91C1C", "#1E40AF", "#059669"], []);
+    const BLUE = "#1E40AF";
+
+    // 🚀 PERFORMANCE FIX: Memoize pie chart data
+    const pieData = useMemo(() => [
+      { name: "Not Started", value: statusStats["not started"] },
+      { name: "In Progress", value: statusStats["in progress"] },
+      { name: "Completed", value: statusStats.completed },
+    ], [statusStats]);
 
     // For Sign Out functionality
-    const handleSignOut = async () => {
+    const handleSignOut = useCallback(async () => {
       try {
         await signOut(auth);
         navigate("/");
       } catch (error) {
         console.error("Sign-out failed:", error.message);
       }
-    };
+    }, [navigate]);
 
     // Check who the logged in user is
     useEffect(() => { 
@@ -66,12 +71,15 @@ function HomePage() {
       }
     }, [profile?.role, profile?.userID]);
 
-    // OPTIMIZED: Single useEffect that fetches ALL data in parallel
+    // 🚀 MAIN DATA FETCH: Single useEffect that fetches ALL data in parallel
     useEffect(() => {
       const fetchAllData = async () => {
-        if (!profile) return; // Wait for profile to load
+        if (!profile?.userID || dataFetched) {
+          return; // Wait for profile to load or prevent duplicate fetches
+        }
         
         setIsLoading(true);
+        setDataFetched(true); // Mark as fetched to prevent duplicates
         console.log("🚀 Starting optimized data fetch...");
         
         try {
@@ -126,19 +134,34 @@ function HomePage() {
 
         } catch (error) {
           console.error("❌ Failed to fetch homepage data:", error);
+          setDataFetched(false); // Reset on error to allow retry
         } finally {
           setIsLoading(false);
         }
       };
 
       fetchAllData();
-    }, [profile, sortBy]); // Re-run when profile loads or sort changes
+    }, [profile?.userID, profile?.role, sortBy, dataFetched]); // Include dataFetched to prevent re-runs
 
-    const pieData = [
-      { name: "Not Started", value: statusStats["not started"] },
-      { name: "In Progress", value: statusStats["in progress"] },
-      { name: "Completed", value: statusStats.completed },
-    ];
+    // 🚀 SEPARATE SORT HANDLER: Only refetch recent cases when sort changes
+    const handleSortChange = useCallback(async (newSortBy) => {
+      if (!profile?.userID || newSortBy === sortBy) return;
+      
+      setSortBy(newSortBy);
+      
+      try {
+        const recentCasesParams = {
+          sortBy: newSortBy,
+          ...(profile?.role !== "admin" && profile?.userID ? { user_id: profile.userID } : {})
+        };
+        
+        const recentCasesRes = await axios.get(`${import.meta.env.VITE_API_URL}/cases/recent`, { params: recentCasesParams });
+        setRecentCases(recentCasesRes.data.cases);
+        console.log("🔄 Recent cases refetched for sort change");
+      } catch (error) {
+        console.error("❌ Failed to refetch recent cases:", error);
+      }
+    }, [profile?.userID, profile?.role, sortBy]);
 
     // Show loading state
     if (isLoading) {
@@ -226,7 +249,7 @@ function HomePage() {
   
             {/* Main Content */}
             <main className="flex flex-col items-center justify-center w-full p-8 space-y-10">
-              {/* Two main charts - EXACTLY like your original */}
+              {/* Two main charts */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl">
               <div className="bg-white bg-opacity-10 border border-gray-700 rounded-lg p-6">
                 <h3 className="text-lg text-blue-500 mb-4 font-semibold">Resolution Status</h3>
@@ -257,7 +280,7 @@ function HomePage() {
               </div>
             </div>
   
-            {/* Recent Cases - EXACTLY like your original */}
+            {/* Recent Cases */}
             <div className="w-full max-w-4xl bg-white bg-opacity-10 border border-gray-700 rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4 text-blue-500">Recent Cases</h2>
               <div className="flex gap-6 mb-4 text-white">
@@ -265,7 +288,7 @@ function HomePage() {
                   <input
                     type="checkbox"
                     checked={sortBy === "dateEntered"}
-                    onChange={() => setSortBy("dateEntered")}
+                    onChange={() => handleSortChange("dateEntered")}
                   />
                   <span>Date Entered</span>
                 </label>
@@ -273,7 +296,7 @@ function HomePage() {
                   <input
                     type="checkbox"
                     checked={sortBy === "dateOfIncident"}
-                    onChange={() => setSortBy("dateOfIncident")}
+                    onChange={() => handleSortChange("dateOfIncident")}
                   />
                   <span>Date of Incident</span>
                 </label>
@@ -298,7 +321,7 @@ function HomePage() {
               </ul>
             </div>
   
-              {/* Create New Case Button - EXACTLY like your original */}
+              {/* Create New Case Button */}
               <Link
                 to="/new-case"
                 className="flex items-center border border-blue-800 text-blue-800 font-bold py-3 px-6 rounded-full shadow hover:bg-blue-800 hover:text-white transition-colors duration-200"
@@ -306,7 +329,7 @@ function HomePage() {
                 <span className="text-2xl mr-2">＋</span> Create New Case / Report
               </Link>
   
-              {/* Dashboard Section - EXACTLY like your original */}
+              {/* Dashboard Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl mt-10">
                 {/* Bar Chart */}
                   <div className="bg-white bg-opacity-10 border border-gray-700 rounded-lg p-6">
