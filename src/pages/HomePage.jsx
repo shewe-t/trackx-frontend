@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   PieChart,
@@ -38,16 +38,13 @@ function HomePage() {
     const [globePoints, setGlobePoints] = useState([]);
     const [sortBy, setSortBy] = useState("dateEntered");
     const [isLoading, setIsLoading] = useState(true);
-    
-    // 🚀 PERFORMANCE FIX 1: Prevent multiple fetches with ref
-    const hasFetchedRef = useRef(false);
-    const profileIdRef = useRef(null);
+    const [dataFetched, setDataFetched] = useState(false);
 
-    // 🚀 PERFORMANCE FIX 2: Memoize constants
+    // 🚀 PERFORMANCE FIX: Memoize constants to prevent re-renders
     const COLORS = useMemo(() => ["#B91C1C", "#1E40AF", "#059669"], []);
     const BLUE = "#1E40AF";
 
-    // 🚀 PERFORMANCE FIX 3: Memoize pie chart data
+    // 🚀 PERFORMANCE FIX: Memoize pie chart data
     const pieData = useMemo(() => [
       { name: "Not Started", value: statusStats["not started"] },
       { name: "In Progress", value: statusStats["in progress"] },
@@ -64,118 +61,110 @@ function HomePage() {
       }
     }, [navigate]);
 
-    // 🚀 PERFORMANCE FIX 4: Memoized data fetching function
-    const fetchAllData = useCallback(async () => {
-      if (!profile?.userID || hasFetchedRef.current || profileIdRef.current === profile.userID) {
-        return; // Prevent duplicate fetches
+    // Check who the logged in user is
+    useEffect(() => { 
+      const user = auth.currentUser;
+      if (user) {
+        console.log("Logged in user:", user);
+      } else {
+        console.warn("No user is currently logged in.");
       }
-      
-      hasFetchedRef.current = true;
-      profileIdRef.current = profile.userID;
-      setIsLoading(true);
-      
-      console.log("🚀 Starting SINGLE optimized data fetch...");
-      
-      try {
-        // Prepare parameters based on user role
-        const userParams = profile?.role === "admin" ? {} : { user_id: profile.userID };
-        const recentCasesParams = {
-          sortBy,
-          ...(profile?.role !== "admin" && profile?.userID ? { user_id: profile.userID } : {})
-        };
+    }, [profile?.role, profile?.userID]);
 
-        // Execute ALL API calls in parallel for maximum speed
-        const [
-          recentCasesRes,
-          allCasesRes,
-          monthlyCountsRes,
-          regionCountsRes,
-          heatPointsRes,
-          globePointsRes
-        ] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/cases/recent`, { params: recentCasesParams }),
-          axios.get(`${import.meta.env.VITE_API_URL}/cases/search`, { params: userParams }),
-          axios.get(`${import.meta.env.VITE_API_URL}/cases/monthly-counts`, { params: userParams }),
-          axios.get(`${import.meta.env.VITE_API_URL}/cases/region-counts`, { params: userParams }),
-          axios.get(`${import.meta.env.VITE_API_URL}/cases/all-points`),
-          axios.get(`${import.meta.env.VITE_API_URL}/cases/last-points`).catch(() => ({ data: { points: [] } }))
-        ]);
-
-        // Process all responses
-        console.log("🆕 Recent cases:", recentCasesRes.data.cases);
-        setRecentCases(recentCasesRes.data.cases);
-
-        // Process case status stats
-        const allCases = allCasesRes.data.cases || [];
-        const notStarted = allCases.filter((c) => c.status === "not started").length;
-        const inProgress = allCases.filter((c) => c.status === "in progress").length;
-        const completed = allCases.filter((c) => c.status === "completed").length;
-        setStatusStats({ "not started": notStarted, "in progress": inProgress, completed });
-
-        console.log("📊 Monthly counts:", monthlyCountsRes.data.counts);
-        setMonthlyCaseCounts(monthlyCountsRes.data.counts);
-
-        console.log("🗺 Region counts:", regionCountsRes.data.counts);
-        setRegionCounts(regionCountsRes.data.counts || []);
-
-        console.log("🔥 Heat points:", heatPointsRes.data.points);
-        setHeatPoints(heatPointsRes.data.points || []);
-
-        console.log("🌍 Globe points:", globePointsRes.data.points);
-        setGlobePoints(globePointsRes.data.points || []);
-
-        console.log("✅ Single data fetch completed!");
-
-      } catch (error) {
-        console.error("❌ Failed to fetch homepage data:", error);
-        // Reset fetch flag on error to allow retry
-        hasFetchedRef.current = false;
-      } finally {
-        setIsLoading(false);
-      }
-    }, [profile?.userID, profile?.role, sortBy]);
-
-    // 🚀 PERFORMANCE FIX 5: Optimized useEffect with better dependencies
+    // 🚀 MAIN DATA FETCH: Single useEffect that fetches ALL data in parallel
     useEffect(() => {
-      if (profile?.userID && !hasFetchedRef.current) {
-        fetchAllData();
-      }
-    }, [fetchAllData]);
-
-    // 🚀 PERFORMANCE FIX 6: Separate useEffect for sort changes (only refetch recent cases)
-    useEffect(() => {
-      const refetchRecentCases = async () => {
-        if (!profile?.userID || !hasFetchedRef.current) return;
+      const fetchAllData = async () => {
+        if (!profile?.userID || dataFetched) {
+          return; // Wait for profile to load or prevent duplicate fetches
+        }
+        
+        setIsLoading(true);
+        setDataFetched(true); // Mark as fetched to prevent duplicates
+        console.log("🚀 Starting optimized data fetch...");
         
         try {
+          // Prepare parameters based on user role
+          const userParams = profile?.role === "admin" ? {} : { user_id: profile.userID };
           const recentCasesParams = {
             sortBy,
             ...(profile?.role !== "admin" && profile?.userID ? { user_id: profile.userID } : {})
           };
-          
-          const recentCasesRes = await axios.get(`${import.meta.env.VITE_API_URL}/cases/recent`, { params: recentCasesParams });
+
+          // Execute ALL API calls in parallel for maximum speed
+          const [
+            recentCasesRes,
+            allCasesRes,
+            monthlyCountsRes,
+            regionCountsRes,
+            heatPointsRes,
+            globePointsRes
+          ] = await Promise.all([
+            axios.get(`${import.meta.env.VITE_API_URL}/cases/recent`, { params: recentCasesParams }),
+            axios.get(`${import.meta.env.VITE_API_URL}/cases/search`, { params: userParams }),
+            axios.get(`${import.meta.env.VITE_API_URL}/cases/monthly-counts`, { params: userParams }),
+            axios.get(`${import.meta.env.VITE_API_URL}/cases/region-counts`, { params: userParams }),
+            axios.get(`${import.meta.env.VITE_API_URL}/cases/all-points`),
+            axios.get(`${import.meta.env.VITE_API_URL}/cases/last-points`).catch(() => ({ data: { points: [] } }))
+          ]);
+
+          // Process all responses
+          console.log("🆕 Recent cases:", recentCasesRes.data.cases);
           setRecentCases(recentCasesRes.data.cases);
-          console.log("🔄 Recent cases refetched for sort change");
+
+          // Process case status stats
+          const allCases = allCasesRes.data.cases || [];
+          const notStarted = allCases.filter((c) => c.status === "not started").length;
+          const inProgress = allCases.filter((c) => c.status === "in progress").length;
+          const completed = allCases.filter((c) => c.status === "completed").length;
+          setStatusStats({ "not started": notStarted, "in progress": inProgress, completed });
+
+          console.log("📊 Monthly counts:", monthlyCountsRes.data.counts);
+          setMonthlyCaseCounts(monthlyCountsRes.data.counts);
+
+          console.log("🗺 Region counts:", regionCountsRes.data.counts);
+          setRegionCounts(regionCountsRes.data.counts || []);
+
+          console.log("🔥 Heat points:", heatPointsRes.data.points);
+          setHeatPoints(heatPointsRes.data.points || []);
+
+          console.log("🌍 Globe points:", globePointsRes.data.points);
+          setGlobePoints(globePointsRes.data.points || []);
+
+          console.log("✅ All data loaded successfully!");
+
         } catch (error) {
-          console.error("❌ Failed to refetch recent cases:", error);
+          console.error("❌ Failed to fetch homepage data:", error);
+          setDataFetched(false); // Reset on error to allow retry
+        } finally {
+          setIsLoading(false);
         }
       };
 
-      if (hasFetchedRef.current) {
-        refetchRecentCases();
-      }
-    }, [sortBy, profile?.userID, profile?.role]);
+      fetchAllData();
+    }, [profile?.userID, profile?.role, sortBy, dataFetched]); // Include dataFetched to prevent re-runs
 
-    // 🚀 PERFORMANCE FIX 7: Reset fetch flag when profile changes significantly
-    useEffect(() => {
-      if (profile?.userID && profileIdRef.current !== profile.userID) {
-        hasFetchedRef.current = false;
-        profileIdRef.current = null;
+    // 🚀 SEPARATE SORT HANDLER: Only refetch recent cases when sort changes
+    const handleSortChange = useCallback(async (newSortBy) => {
+      if (!profile?.userID || newSortBy === sortBy) return;
+      
+      setSortBy(newSortBy);
+      
+      try {
+        const recentCasesParams = {
+          sortBy: newSortBy,
+          ...(profile?.role !== "admin" && profile?.userID ? { user_id: profile.userID } : {})
+        };
+        
+        const recentCasesRes = await axios.get(`${import.meta.env.VITE_API_URL}/cases/recent`, { params: recentCasesParams });
+        setRecentCases(recentCasesRes.data.cases);
+        console.log("🔄 Recent cases refetched for sort change");
+      } catch (error) {
+        console.error("❌ Failed to refetch recent cases:", error);
       }
-    }, [profile?.userID]);
+    }, [profile?.userID, profile?.role, sortBy]);
 
     // Show loading state
-    if (isLoading || !profile) {
+    if (isLoading) {
       return (
         <div className="relative flex flex-col min-h-screen">
           <div className="absolute inset-0 w-full min-h-full bg-gradient-to-br from-black via-gray-900 to-black" />
@@ -299,7 +288,7 @@ function HomePage() {
                   <input
                     type="checkbox"
                     checked={sortBy === "dateEntered"}
-                    onChange={() => setSortBy("dateEntered")}
+                    onChange={() => handleSortChange("dateEntered")}
                   />
                   <span>Date Entered</span>
                 </label>
@@ -307,7 +296,7 @@ function HomePage() {
                   <input
                     type="checkbox"
                     checked={sortBy === "dateOfIncident"}
-                    onChange={() => setSortBy("dateOfIncident")}
+                    onChange={() => handleSortChange("dateOfIncident")}
                   />
                   <span>Date of Incident</span>
                 </label>
