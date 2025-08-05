@@ -1,25 +1,26 @@
-// components/MiniHeatMapWindow.jsx
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import Map from 'react-map-gl';
 
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoiam9ubHVrZTciLCJhIjoiY21icjgzYW1lMDczazJqc2Fmbm4xd2RteSJ9.pbPMQ4ywc52Fy0TXp4ndHg';
 
-const MiniHeatMapWindow = ({ points = [] }) => {
-  const formattedPoints = (points || []).map(p => ({
-    position: [p.lng || 0, p.lat || 0],  // ✅ Fixed from longitude/latitude to lng/lat
-  }));
+const MiniHeatMapWindow = memo(({ points = [] }) => {
+  const formattedPoints = useMemo(() => {
+    const formatted = (points || []).map(p => ({
+      position: [p.lng || 0, p.lat || 0],
+    }));
+    console.log("🛰️ MiniHeatMapWindow formatted points:", formatted.length);
+    return formatted;
+  }, [points]);
 
-  console.log("🛰️ MiniHeatMapWindow formatted points:", formattedPoints);
-
-  const heatmapLayer = new HeatmapLayer({
+  const heatmapLayer = useMemo(() => new HeatmapLayer({
     id: 'mini-heatmap',
     data: formattedPoints,
     getPosition: d => d.position,
     getWeight: () => 1,
     radiusPixels: 30,
-  });
+  }), [formattedPoints]);
 
   return (
     <div style={{ width: '100%', height: '300px', position: 'relative', borderRadius: '1rem', overflow: 'hidden' }}>
@@ -42,7 +43,6 @@ const MiniHeatMapWindow = ({ points = [] }) => {
         />
       </DeckGL>
 
-      {/*  Hoverable overlay with link */}
       <div
         onClick={() => window.location.href = '/heatmap'}
         onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.4)'}
@@ -74,6 +74,6 @@ const MiniHeatMapWindow = ({ points = [] }) => {
       </div>
     </div>
   );
-};
+});
 
 export default MiniHeatMapWindow;
